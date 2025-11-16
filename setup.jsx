@@ -429,8 +429,12 @@ if (appTitleKm.startsWith('A-')) {
 } else if (appTitleKm.startsWith('B-')) {
   appBranch = 'B';
 }
+
+// !! START: កែសម្រួល Path !!
 // បង្កើត Path សម្រាប់ផ្ទុកការកំណត់កាត (ដាច់ដោយឡែក)
-const passManagementPath = `passManagement_${appBranch}`;
+// ដោយដាក់វានៅ "ខាងក្នុង" passManagement
+const passManagementPath = `passManagement/branch_${appBranch}`;
+// !! END: កែសម្រួល Path !!
 
 
 // =================================================================
@@ -453,7 +457,7 @@ window.appSetup = {
   // Assets
   translations,
   backgroundStyles,
-  passManagementPath, // !! ថ្មី !!
+  passManagementPath, // !! ថ្មី !! (បានកែសម្រួល)
   appBranch, // !! ថ្មី !!
   
   // Icons
