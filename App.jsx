@@ -167,7 +167,6 @@ function App() {
     // !! ថ្មី !!: Guard Clause: រង់ចាំ dbWrite ដំណើរការសិន
     if (dbRead && dbWrite) {
       
-      // ... (Logic ទាញ Students មិនផ្លាស់ប្តូរ) ...
       // 1. ទាញបញ្ជី Students (dbRead)
       const studentsRef = ref(dbRead, 'students');
       const unsubscribeStudents = onValue(studentsRef, (snapshot) => {
@@ -197,9 +196,7 @@ function App() {
 
       // !! START: កែសម្រួល Logic ការទាញ Attendance ទាំងស្រុង !!
 
-      // 2. ទាញ Attendance ថ្ងៃនេះ (dbWrite)
-      // យើងត្រូវរង់ចាំ passPrefix ផ្ទុកទិន្នន័យសិន
-      // ដូច្នេះ យើងបំបែក Logic ទាញ Settings ចេញ
+      // 2. ទាញ Settings ទាំងអស់ (Global & Branch)
       
       const settingRef = ref(dbWrite, 'passManagement');
       const branchSettingsRef = ref(dbWrite, passManagementPath);
@@ -208,66 +205,55 @@ function App() {
       const unsubSettings = onValue(settingRef, (snapshot) => {
         const settings = snapshot.val() || {};
         
-        // Admin Password
-        if (settings.adminPassword) {
-          setAdminPassword(settings.adminPassword);
-          console.log("Admin password fetched.");
-        } else {
-           setAdminPassword('4545ak0'); 
-        }
+        setAdminPassword(settings.adminPassword || '4545ak0');
+        setCheckInMode(settings.checkInMode || 'scan');
+        setOvertimeLimit(parseInt(settings.overtimeLimit) || 15);
         
-        // CheckIn Mode
-        if (settings.checkInMode) {
-          setCheckInMode(settings.checkInMode);
-          console.log(`Check-in mode set to: ${settings.checkInMode}`);
-        }
-        
-        // Overtime Limit
-        if (settings.overtimeLimit && !isNaN(parseInt(settings.overtimeLimit))) {
-          setOvertimeLimit(parseInt(settings.overtimeLimit));
-          console.log(`Overtime limit set to: ${settings.overtimeLimit}`);
-        } else {
-          setOvertimeLimit(15);
-        }
+        console.log("General settings loaded.");
       }, (error) => {
           console.error('General Settings Fetch Error:', error);
           setAdminPassword('4545ak0');
           setOvertimeLimit(15);
       });
 
+      // !! ថ្មី !!: អថេរសម្រាប់ផ្ទុក Unsubscribe Function របស់ Attendance
+      let unsubAttendance = () => {}; 
+
       // 2b. ទាញ Branch Settings (Total, Prefix, StartNum)
       const unsubBranchSettings = onValue(branchSettingsRef, (snapshot) => {
         const branchSettings = snapshot.val() || {};
         
-        setTotalPasses(branchSettings.totalPasses || 0);
-        setPassPrefix(branchSettings.passPrefix || 'DD_');
-        setPassStartNumber(branchSettings.passStartNumber || 1);
+        const newTotal = branchSettings.totalPasses || 0;
+        const newPrefix = branchSettings.passPrefix || 'DD_';
+        const newStartNum = branchSettings.passStartNumber || 1;
+
+        setTotalPasses(newTotal);
+        setPassPrefix(newPrefix);
+        setPassStartNumber(newStartNum);
         
         console.log(`Branch "${appBranch}" settings loaded:`, branchSettings);
 
-        // !! សំខាន់ !!: បន្ទាប់ពីទាញ Prefix បានជោគជ័យ
-        // ទើបយើងចាប់ផ្តើមស្តាប់ (Listen) Attendance
-        
-        // 2c. ទាញ Attendance ថ្ងៃនេះ (dbWrite) - ដោយ Query តាម Prefix
+        // !! សំខាន់ !!: 
+        // 1. បិទ (Unsubscribe) Listener ចាស់ (បើមាន)
+        unsubAttendance(); 
+        console.log(`Previous attendance listener for branch "${passPrefix}" detached.`);
+
+        // 2. បង្កើត Listener ថ្មី សម្រាប់ Attendance ដោយផ្អែកលើ Prefix ថ្មី
         const attendanceRefDb = ref(dbWrite, 'attendance');
-        
-        // យើង Query រក Record ទាំងអស់ដែលផ្ដើមដោយ Prefix នេះ
-        // (Firebase មិនអាច Query "endsWith" ឬ "contains" ទេ, ត្រូវតែ "startsWith")
-        // ដូចនេះ យើងត្រូវទាញទាំងអស់ ហើយ Filter ខ្លួនឯង
         const attendanceQuery = rtdbQuery(attendanceRefDb, orderByChild('date'), equalTo(appSetup.todayString));
 
-        const unsubAttendance = onValue(attendanceQuery, (snapshot) => {
+        unsubAttendance = onValue(attendanceQuery, (attSnapshot) => {
             const attMap = {};
-            const attData = snapshot.val();
+            const attData = attSnapshot.val();
             
-            // យក Prefix បច្ចុប្បន្ន (ព្រោះ onValue អាចនឹង Fire មុនពេល State Update)
-            const currentPrefix = branchSettings.passPrefix || 'DD_';
+            // ប្រើ Prefix ថ្មី ពីការទាញទិន្នន័យ (មិនមែនពី State)
+            const currentPrefix = newPrefix; 
 
             if (attData) {
               Object.keys(attData).forEach((key) => {
                 const data = attData[key];
                 
-                // !! ជួសជុលកំហុស !!: ត្រង (Filter) យកតែ Prefix របស់សាខានេះ
+                // ត្រង (Filter) យកតែ Prefix របស់សាខានេះ
                 if (data.passNumber && data.passNumber.startsWith(currentPrefix)) { 
                   if (!attMap[data.studentId]) {
                     attMap[data.studentId] = []; 
@@ -286,9 +272,6 @@ function App() {
             console.error('Attendance Fetch Error (dbWrite):', error);
             setAuthError(`Attendance Fetch Error: ${error.message}`);
         });
-
-        // ត្រូវប្រាកដថាយើង Unsubscribe ពេល Component Unmount
-        return () => unsubAttendance();
         
       }, (error) => {
           console.error(`Branch "${appBranch}" Settings Fetch Error:`, error);
@@ -298,11 +281,12 @@ function App() {
           setPassStartNumber(1);
       });
       
+      // 3. មុខងារ Cleanup របស់ useEffect
       return () => {
         unsubscribeStudents();
         unsubSettings();
         unsubBranchSettings();
-        // (unsubAttendance ត្រូវបាន return ពីខាងក្នុង)
+        unsubAttendance(); // !! សំខាន់ !!: បិទ Listener ចុងក្រោយបង្អស់
       };
     }
   }, [dbRead, dbWrite, appSetup.todayString, ref, onValue, orderByChild, equalTo, passManagementPath, appBranch]); // !! ថ្មី !!: យក get/update ចេញ, បន្ថែម appBranch
@@ -375,12 +359,6 @@ function App() {
   // !! ថ្មី !!: ត្រង (Filter) Completed Breaks តាមសាខា (Branch)
   const filteredCompletedBreaks = React.useMemo(() => {
     // !! Logic នេះ លែងត្រូវការទៀតហើយ ព្រោះ allCompletedBreaks ឥឡូវត្រូវបាន Filter មុន !!
-    // if (passPrefix === null) {
-    //   return []; 
-    // }
-    // return allCompletedBreaks.filter(item => 
-    //   item.record.passNumber && item.record.passNumber.startsWith(passPrefix)
-    // );
     return allCompletedBreaks; // ប្រើដោយផ្ទាល់
   }, [allCompletedBreaks]);
 
@@ -448,6 +426,7 @@ function App() {
   // Effect សម្រាប់គ្រប់គ្រង Scanner បន្ទាប់ពី Firebase Update
   useEffect(() => {
     if (scannerTriggeredCheckIn) {
+      // !! Logic នេះ ឥឡូវត្រឹមត្រូវ 100% ព្រោះ State "attendance" ត្រូវបាន Filter មុន !!
       const newStudentsOnBreak = students
         .map(student => {
           const breaks = attendance[student.id] || [];
