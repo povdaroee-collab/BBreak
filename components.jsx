@@ -22,7 +22,8 @@ window.StudentCard = ({
   totalPasses, 
   t, 
   checkInMode,
-  overtimeLimit // !! ថ្មី !!: ទទួល Prop នាទី Overtime
+  overtimeLimit, // !! ថ្មី !!: ទទួល Prop នាទី Overtime
+  appBranch // !! ថ្មី !!: ទទួល Prop សាខា
 }) => {
   
   const studentBreaks = attendance[student.id] || [];
@@ -42,8 +43,13 @@ window.StudentCard = ({
     // !! កែសម្រួល !!: ប្រើ overtimeLimit ពី Prop
     const isOvertime = elapsedMins > overtimeLimit; 
     
+    // !! START: ជួសជុលកំហុស !!
+    // 1. បន្ថែម (Branch)
+    // 2. កែ t.statusMinutes ទៅ t.minutes
+    const branchDisplay = appBranch ? ` (${appBranch})` : ''; // បង្ហាញ (A) ឬ (B)
     const passNumberDisplay = activeBreak.passNumber ? ` (${t.statusPass}: ${activeBreak.passNumber})` : '';
-    statusText = `${t.statusOnBreak}${passNumberDisplay} (${elapsedMins} ${t.statusMinutes})`; 
+    statusText = `${t.statusOnBreak}${passNumberDisplay}${branchDisplay} (${elapsedMins} ${t.minutes})`; 
+    // !! END: ជួសជុលកំហុស !!
     
     statusClass = isOvertime 
       ? 'bg-red-600 text-white animate-pulse' 
@@ -61,9 +67,10 @@ window.StudentCard = ({
     const isCompletedOvertime = duration > overtimeLimit;
     const overtimeMins = isCompletedOvertime ? duration - overtimeLimit : 0;
     
+    // !! ជួសជុលកំហុស !!: កែ t.statusMinutes ទៅ t.minutes
     statusText = isCompletedOvertime
-      ? `${t.statusCompleted} (${t.statusOvertime} ${overtimeMins} ${t.statusMinutes})`
-      : `${t.statusCompleted} (${duration} ${t.statusMinutes})`; 
+      ? `${t.statusCompleted} (${t.statusOvertime} ${overtimeMins} ${t.minutes})`
+      : `${t.statusCompleted} (${duration} ${t.minutes})`; 
     statusClass = isCompletedOvertime
       ? 'bg-red-600 text-white' 
       : 'bg-green-600 text-white';
@@ -258,7 +265,7 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
         
         {isOvertime && (
           <p className="text-sm font-semibold text-red-300">
-            ({t.statusOvertime} {overtimeMins} {t.statusMinutes})
+            ({t.statusOvertime} {overtimeMins} {t.minutes})
           </p>
         )}
         {record.breakType === 'special' && (
@@ -270,7 +277,7 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
       
       <div className="text-center px-2">
         <p className={`text-2xl font-bold ${durationColor}`}>{duration}</p>
-        <p className="text-xs text-blue-200">{t.statusMinutes}</p>
+        <p className="text-xs text-blue-200">{t.minutes}</p>
       </div>
       
       {!isSelectionMode && (
@@ -336,7 +343,7 @@ window.OnBreakStudentListCard = ({
       
       <div className="text-center px-2">
         <p className={`text-2xl font-bold ${textColor}`}>{elapsedMins}</p>
-        <p className="text-xs text-blue-200">{t.statusMinutes}</p>
+        <p className="text-xs text-blue-200">{t.minutes}</p>
       </div>
       
       <div className="flex flex-col space-y-2">
