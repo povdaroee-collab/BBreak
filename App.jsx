@@ -379,15 +379,24 @@ function App() {
     return breaks;
   }, [students, attendance]);
 
+  // !! ថ្មី !!: ត្រង (Filter) Completed Breaks តាមសាខា (Branch)
+  const filteredCompletedBreaks = React.useMemo(() => {
+    if (!passPrefix) return allCompletedBreaks; // បើមិនទាន់ Load Prefix, បង្ហាញទាំងអស់សិន
+    return allCompletedBreaks.filter(item => 
+      item.record.passNumber && item.record.passNumber.startsWith(passPrefix)
+    );
+  }, [allCompletedBreaks, passPrefix]);
+
   // !! ថ្មី !!: Logic សម្រាប់ Pagination នៃ Page 'Completed'
   const CARDS_PER_PAGE = 12;
-  const totalCompletedPages = Math.ceil(allCompletedBreaks.length / CARDS_PER_PAGE);
+  // !! កែសម្រួល !!: ប្រើ filteredCompletedBreaks
+  const totalCompletedPages = Math.ceil(filteredCompletedBreaks.length / CARDS_PER_PAGE);
   const paginatedCompletedBreaks = React.useMemo(() => {
-    return allCompletedBreaks.slice(
+    return filteredCompletedBreaks.slice(
       completedPage * CARDS_PER_PAGE,
       (completedPage + 1) * CARDS_PER_PAGE
     );
-  }, [allCompletedBreaks, completedPage]);
+  }, [filteredCompletedBreaks, completedPage]); // !! កែសម្រួល !!
 
   const selectedStudent = React.useMemo(() => 
     students.find(s => s.id === selectedStudentId), 
@@ -1117,9 +1126,10 @@ function App() {
             >
               <span className="relative z-10 flex items-center">
                 <IconCheckCircle />
-                {allCompletedBreaks.length > 0 && (
+                {/* !! កែសម្រួល !!: ប្រើ filteredCompletedBreaks.length */}
+                {filteredCompletedBreaks.length > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {allCompletedBreaks.length}
+                    {filteredCompletedBreaks.length}
                   </span>
                 )}
               </span>
@@ -1278,8 +1288,8 @@ function App() {
                 isSelectionMode={isSelectionMode}
                 t={t}
               />
-              {/* !! កែសម្រួល !!: ប្រើ paginatedCompletedBreaks ជំនួស allCompletedBreaks */}
-              {paginatedCompletedBreaks.length > 0 ? (
+              {/* !! កែសម្រួល !!: ប្រើ filteredCompletedBreaks.length */}
+              {filteredCompletedBreaks.length > 0 ? (
                 paginatedCompletedBreaks.map(({ student, record }) => (
                   <CompletedStudentListCard 
                     key={record.id} 
