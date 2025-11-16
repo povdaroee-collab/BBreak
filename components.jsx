@@ -46,7 +46,7 @@ window.StudentCard = ({
     // !! START: ជួសជុលកំហុស !!
     // 1. បន្ថែម (Branch)
     // 2. កែ t.statusMinutes ទៅ t.minutes
-    const branchDisplay = appBranch ? ` (${appBranch})` : ''; // បង្ហាញ (A) ឬ (B)
+    const branchDisplay = activeBreak.branch ? ` (${activeBreak.branch})` : (appBranch ? ` (${appBranch})` : ''); // !! កែសម្រួល !!: ព្យាយាមទាញពី Record មុន
     const passNumberDisplay = activeBreak.passNumber ? ` (${t.statusPass}: ${activeBreak.passNumber})` : '';
     statusText = `${t.statusOnBreak}${passNumberDisplay}${branchDisplay} (${elapsedMins} ${t.minutes})`; 
     // !! END: ជួសជុលកំហុស !!
@@ -227,6 +227,9 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
     student.photoUrl ||
     `https://placehold.co/64x64/EBF4FF/76A9FA?text=${student.name ? student.name.charAt(0) : 'N'}`;
 
+  // !! ថ្មី !!: បង្ហាញ Branch ពី Record
+  const branchDisplay = record.branch ? ` (${record.branch})` : '';
+
   return (
     <div
       className={`w-full max-w-md mx-auto rounded-2xl shadow-lg p-4 mb-3 flex items-center space-x-4 transition-all ${cardColor} ${isSelectionMode ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
@@ -259,7 +262,7 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
         
         {record.passNumber && (
           <p className="text-sm font-semibold text-cyan-300">
-            ({t.statusPass}: {record.passNumber})
+            ({t.statusPass}: {record.passNumber}{branchDisplay}) {/* !! ថ្មី !! */}
           </p>
         )}
         
@@ -316,6 +319,9 @@ window.OnBreakStudentListCard = ({
     ? handleOpenQrScanner 
     : () => onCheckIn();
 
+  // !! ថ្មី !!: បង្ហាញ Branch ពី Record
+  const branchDisplay = record.branch ? ` (${record.branch})` : '';
+
   return (
     <div className={`w-full max-w-md mx-auto rounded-2xl shadow-lg p-4 mb-3 flex items-center space-x-3 ${cardColor}`}>
       <img
@@ -337,7 +343,7 @@ window.OnBreakStudentListCard = ({
           )}
         </p>
         <p className="text-sm text-blue-200">
-          ({t.statusPass}: {record.passNumber || '???'})
+          ({t.statusPass}: {record.passNumber || '???'}{branchDisplay}) {/* !! ថ្មី !! */}
         </p>
       </div>
       
