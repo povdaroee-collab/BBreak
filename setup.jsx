@@ -232,7 +232,7 @@ const backgroundStyles = {
 // =================================================================
 const translations = {
   km: {
-    appTitle: 'A-កត់ត្រាម៉ោងសម្រាក', // !! កែសម្រួលនៅទីនេះ 'A-' ឬ 'B-' !!
+    appTitle: 'B-កត់ត្រាម៉ោងសម្រាក', // !! កែសម្រួលនៅទីនេះ 'A-' ឬ 'B-' !!
     searchPlaceholder: 'ស្វែងរកអត្តលេខ/ឈ្មោះ',
     studentNotFound: 'រកមិនឃើញនិស្សិត...',
     photoOf: 'រូបថតរបស់',
@@ -326,7 +326,7 @@ const translations = {
     paginationPage: 'ទំព័រ', // !! ថ្មី !!
   },
   en: {
-    appTitle: 'A-Break Time Tracker', // !! កែសម្រួលនៅទីនេះ 'A-' ឬ 'B-' !!
+    appTitle: 'B-Break Time Tracker', // !! កែសម្រួលនៅទីនេះ 'A-' ឬ 'B-' !!
     searchPlaceholder: 'Search ID/Name',
     studentNotFound: 'Student not found...',
     photoOf: "Photo of",
