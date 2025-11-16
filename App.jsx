@@ -236,7 +236,7 @@ function App() {
         // !! សំខាន់ !!: 
         // 1. បិទ (Unsubscribe) Listener ចាស់ (បើមាន)
         unsubAttendance(); 
-        console.log(`Previous attendance listener for branch "${passPrefix}" detached.`);
+        console.log(`Previous attendance listener detached.`);
 
         // 2. បង្កើត Listener ថ្មី សម្រាប់ Attendance ដោយផ្អែកលើ Prefix ថ្មី
         const attendanceRefDb = ref(dbWrite, 'attendance');
@@ -246,15 +246,17 @@ function App() {
             const attMap = {};
             const attData = attSnapshot.val();
             
-            // ប្រើ Prefix ថ្មី ពីការទាញទិន្នន័យ (មិនមែនពី State)
-            const currentPrefix = newPrefix; 
+            // យក Prefix បច្ចុប្បន្ន (ព្រោះ onValue អាចនឹង Fire មុនពេល State Update)
+            // const currentPrefix = newPrefix; // !! លែងត្រូវការ !!
 
             if (attData) {
               Object.keys(attData).forEach((key) => {
                 const data = attData[key];
                 
-                // ត្រង (Filter) យកតែ Prefix របស់សាខានេះ
-                if (data.passNumber && data.passNumber.startsWith(currentPrefix)) { 
+                // !! START: ជួសជុលកំហុស 100% !!
+                // ត្រង (Filter) យកតែ Branch របស់សាខានេះ
+                if (data.branch === appBranch) { 
+                // !! END: ជួសជុលកំហុស 100% !!
                   if (!attMap[data.studentId]) {
                     attMap[data.studentId] = []; 
                   }
@@ -267,7 +269,7 @@ function App() {
               attMap[studentId].sort((a, b) => new Date(a.checkOutTime) - new Date(b.checkOutTime));
             }
             setAttendance(attMap); 
-            console.log(`Attendance data fetched/updated for Branch "${appBranch}" (Prefix: ${currentPrefix}).`);
+            console.log(`Attendance data fetched/updated for Branch "${appBranch}".`);
         }, (error) => {
             console.error('Attendance Fetch Error (dbWrite):', error);
             setAuthError(`Attendance Fetch Error: ${error.message}`);
@@ -485,14 +487,13 @@ function App() {
 
         // 4. គណនាកាតដែលកំពុងប្រើ ពីទិន្នន័យ Transaction
         // !! START: ជួសជុលកំហុស !!
-        // ត្រូវតែត្រង (Filter) តាម passPrefix របស់សាខានេះ
+        // ត្រូវតែត្រង (Filter) តាម Branch របស់សាខានេះ (មិនមែន Prefix)
         const usedPassNumbers = allBreaks
           .filter(r => 
             r.date === appSetup.todayString && 
             r.checkOutTime && 
             !r.checkInTime &&
-            r.passNumber && // ត្រូវតែមានលេខកាត
-            r.passNumber.startsWith(passPrefix) // ត្រូវតែជា Prefix របស់សាខានេះ
+            r.branch === appBranch // !! ជួសជុលកំហុស !!: ត្រងតាម Branch
           )
           .map(r => r.passNumber);
         // !! END: ជួសជុលកំហុស !!
