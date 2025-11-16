@@ -66,8 +66,8 @@ function App() {
   const [checkInMode, setCheckInMode] = useState('scan'); 
   const [overtimeLimit, setOvertimeLimit] = useState(15); // !! ថ្មី !!: State សម្រាប់នាទី Overtime
   const [completedPage, setCompletedPage] = useState(0); // !! ថ្មី !!: State សម្រាប់ Pagination (0-based)
-  const [passPrefix, setPassPrefix] = useState('DD_'); // !! ថ្មី !!
-  const [passStartNumber, setPassStartNumber] = useState(1); // !! ថ្មី !!
+  const [passPrefix, setPassPrefix] = useState(null); // !! ថ្មី !!: ចាប់ផ្ដើមពី null
+  const [passStartNumber, setPassStartNumber] = useState(null); // !! ថ្មី !!: ចាប់ផ្ដើមពី null
 
   // --- Refs សម្រាប់ Stale State ---
   const t = translations[language] || translations['km'];
@@ -284,11 +284,12 @@ function App() {
           setPassPrefix(prefix);
           console.log(`Pass prefix set to: ${prefix}`);
         } else {
-          setPassPrefix('DD_'); // Default
+          setPassPrefix('DD_'); // !! ថ្មី !!: កំណត់ Default បើមិនមាន
+          console.log("No pass prefix set, defaulting to DD_");
         }
       }, (error) => {
         console.error('Pass Prefix Fetch Error:', error);
-        setPassPrefix('DD_');
+        setPassPrefix('DD_'); // !! ថ្មី !!: កំណត់ Default បើ Error
       });
 
       // !! ថ្មី !!: 8. ទាញ Pass Start Number - !! ប្រើ Path ថ្មី !!
@@ -299,11 +300,12 @@ function App() {
           setPassStartNumber(parseInt(startNum));
           console.log(`Pass start number set to: ${startNum}`);
         } else {
-          setPassStartNumber(1); // Default
+          setPassStartNumber(1); // !! ថ្មី !!: កំណត់ Default បើមិនមាន
+          console.log("No pass start number set, defaulting to 1");
         }
       }, (error) => {
         console.error('Pass Start Number Fetch Error:', error);
-        setPassStartNumber(1);
+        setPassStartNumber(1); // !! ថ្មី !!: កំណត់ Default បើ Error
       });
 
       // !! លុប !!: លែងត្រូវការ Logic ពិនិត្យ ActivePasses ដ៏ស្មុគស្មាញនោះទៀតហើយ
@@ -323,6 +325,12 @@ function App() {
 
   // --- Data Preparation for Render ---
   const sortedStudentsOnBreak = React.useMemo(() => {
+    
+    // !! ថ្មី !!: Guard Clause - រង់ចាំ Prefix មុនពេលគណនា
+    if (passPrefix === null) {
+      return []; 
+    }
+
     return students
       .map(student => {
         const breaks = attendance[student.id] || [];
@@ -381,7 +389,10 @@ function App() {
 
   // !! ថ្មី !!: ត្រង (Filter) Completed Breaks តាមសាខា (Branch)
   const filteredCompletedBreaks = React.useMemo(() => {
-    if (!passPrefix) return allCompletedBreaks; // បើមិនទាន់ Load Prefix, បង្ហាញទាំងអស់សិន
+    // !! ថ្មី !!: Guard Clause
+    if (passPrefix === null) {
+      return []; 
+    }
     return allCompletedBreaks.filter(item => 
       item.record.passNumber && item.record.passNumber.startsWith(passPrefix)
     );
@@ -487,7 +498,13 @@ function App() {
   // !! START: កែសម្រួល HandleCheckOut ទាំងស្រុង (Logic ថ្មី) !!
   const handleCheckOut = React.useCallback(async (studentId) => {
     const student = students.find(s => s.id === studentId);
-    if (!student || !dbWrite) return;
+    
+    // !! ថ្មី !!: Guard Clause - រង់ចាំ Prefix មុនពេលអនុញ្ញាត
+    if (!student || !dbWrite || passPrefix === null || passStartNumber === null) {
+      console.error("Check-out blocked: passPrefix or passStartNumber not loaded yet.");
+      setAuthError("សូមរង់ចាំ... កំពុងទាញការកំណត់ Prefix។");
+      return;
+    }
     
     // 1. កំណត់ទីតាំង Transaction (Attendance root)
     const attendanceRefDb = ref(dbWrite, 'attendance');
