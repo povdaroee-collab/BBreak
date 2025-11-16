@@ -562,7 +562,8 @@ function App() {
           checkInTime: null,
           checkOutTime: new Date().toISOString(),
           breakType: newBreakType,
-          passNumber: assignedPassNumber
+          passNumber: assignedPassNumber,
+          branch: appBranch // !! ថ្មី !!: រក្សាទុក សាខា
         };
         
         // 10. បន្ថែម Record ថ្មីទៅក្នុង Transaction
@@ -597,7 +598,7 @@ function App() {
       console.error('Check-out Transaction Error:', error);
       setAuthError(`Check-out Error: ${error.message}`);
     }
-  }, [dbWrite, students, totalPasses, speak, ref, push, runTransaction, appSetup.todayString, tRef, passPrefix, passStartNumber, sortedStudentsOnBreak.length]); // !! ថ្មី !!: បន្ថែម passPrefix, passStartNumber, sortedStudentsOnBreak.length
+  }, [dbWrite, students, totalPasses, speak, ref, push, runTransaction, appSetup.todayString, tRef, passPrefix, passStartNumber, sortedStudentsOnBreak.length, appBranch]); // !! ថ្មី !!: បន្ថែម passPrefix, passStartNumber, sortedStudentsOnBreak.length, appBranch
   // !! END: កែសម្រួល HandleCheckOut ទាំងស្រុង !!
   
   // !! START: កែសម្រួល HandleCheckIn !!
