@@ -326,7 +326,16 @@ function App() {
     return students
       .map(student => {
         const breaks = attendance[student.id] || [];
-        const activeBreak = breaks.find(r => r.checkOutTime && !r.checkInTime);
+        //const activeBreak = breaks.find(r => r.checkOutTime && !r.checkInTime);
+        // !! START: កែសម្រួល Logic !!
+        // ស្វែងរក Active Break ដែលត្រូវនឹង Prefix របស់សាខានេះ
+        const activeBreak = breaks.find(r => 
+          r.checkOutTime && 
+          !r.checkInTime &&
+          r.passNumber && // ត្រូវតែមានលេខកាត
+          r.passNumber.startsWith(passPrefix) // ត្រូវតែជា Prefix របស់សាខានេះ
+        );
+        // !! END: កែសម្រួល Logic !!
         if (!activeBreak) return null; 
         const elapsedMins = calculateDuration(activeBreak.checkOutTime, now.toISOString()); 
         // !! កែសម្រួល !!: ប្រើ State 'overtimeLimit'
