@@ -1238,6 +1238,7 @@ function App() {
                   t={t}
                   checkInMode={checkInMode}
                   overtimeLimit={overtimeLimit} // !! ថ្មី !!
+                  appBranch={appBranch} // !! ថ្មី !!: បន្ថែមសាខា
                 />
               )}
               {/* !! កែសម្រួល !!: លក្ខខណ្ឌ isSearchFocused ឥឡូវត្រូវបានគ្រប់គ្រងដោយ useMemo */}
@@ -1372,6 +1373,7 @@ function App() {
                 t={t}
                 checkInMode={checkInMode}
                 overtimeLimit={overtimeLimit} // !! ថ្មី !!
+                appBranch={appBranch} // !! ថ្មី !!: បន្ថែមសាខា
               />
               <button onClick={() => setModalStudent(null)} className="absolute top-4 right-4 text-white bg-white/10 p-2 rounded-full transition-all hover:bg-white/30">
                 <IconClose />
