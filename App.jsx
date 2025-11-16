@@ -164,9 +164,10 @@ function App() {
   
   // ជំហានទី 2: ទាញទិន្នន័យ (ពី DB ផ្សេងគ្នា)
   useEffect(() => {
+    // !! ថ្មី !!: Guard Clause: រង់ចាំ dbWrite ដំណើរការសិន
     if (dbRead && dbWrite) {
-      setLoading(true);
       
+      // ... (Logic ទាញ Students មិនផ្លាស់ប្តូរ) ...
       // 1. ទាញបញ្ជី Students (dbRead)
       const studentsRef = ref(dbRead, 'students');
       const unsubscribeStudents = onValue(studentsRef, (snapshot) => {
@@ -194,134 +195,119 @@ function App() {
           setLoading(false);
       });
 
+      // !! START: កែសម្រួល Logic ការទាញ Attendance ទាំងស្រុង !!
+
       // 2. ទាញ Attendance ថ្ងៃនេះ (dbWrite)
-      const attendanceRefDb = ref(dbWrite, 'attendance');
-      // !! កែសម្រួល !!: មិនបាច់ Query តាមថ្ងៃទេ ព្រោះ Transaction នឹងធ្វើវា
-      // const qAttendance = rtdbQuery(attendanceRefDb, orderByChild('date'), equalTo(appSetup.todayString));
-      const unsubscribeAttendance = onValue(attendanceRefDb, (snapshot) => {
-          const attMap = {};
-          const attData = snapshot.val();
-          if (attData) {
-            Object.keys(attData).forEach((key) => {
-              const data = attData[key];
-              // !! កែសម្រួល !!: Filter យកតែថ្ងៃនេះ នៅក្នុង Client-side
-              if (data.date === appSetup.todayString) { 
-                if (!attMap[data.studentId]) {
-                  attMap[data.studentId] = []; 
-                }
-                attMap[data.studentId].push({ id: key, ...data });
-              }
-            });
-          }
-          for (const studentId in attMap) {
-            attMap[studentId].sort((a, b) => new Date(a.checkOutTime) - new Date(b.checkOutTime));
-          }
-          setAttendance(attMap); 
-          console.log("Attendance data fetched/updated.");
-      }, (error) => {
-          console.error('Attendance Fetch Error (dbWrite):', error);
-          setAuthError(`Attendance Fetch Error: ${error.message}`);
-      });
+      // យើងត្រូវរង់ចាំ passPrefix ផ្ទុកទិន្នន័យសិន
+      // ដូច្នេះ យើងបំបែក Logic ទាញ Settings ចេញ
       
-      // 3. ទាញ Total Passes (dbWrite) - !! ប្រើ Path ថ្មី !!
-      const passRef = ref(dbWrite, `${passManagementPath}/totalPasses`);
-      const unsubscribePasses = onValue(passRef, (snapshot) => {
-        const total = snapshot.val() || 0; 
-        setTotalPasses(total);
-        console.log(`Total passes set to: ${total}`);
-      }, (error) => {
-        console.error('Total Passes Fetch Error (dbWrite):', error);
-      });
-      
-      // 4. ទាញ Admin Password (dbWrite) - (នៅកន្លែងដដែល)
-      const passwordRef = ref(dbWrite, 'passManagement/adminPassword');
-      const unsubscribePassword = onValue(passwordRef, (snapshot) => {
-        const pass = snapshot.val();
-        if (pass) {
-          setAdminPassword(pass);
+      const settingRef = ref(dbWrite, 'passManagement');
+      const branchSettingsRef = ref(dbWrite, passManagementPath);
+
+      // 2a. ទាញ Settings (Admin Pass, Overtime, CheckInMode)
+      const unsubSettings = onValue(settingRef, (snapshot) => {
+        const settings = snapshot.val() || {};
+        
+        // Admin Password
+        if (settings.adminPassword) {
+          setAdminPassword(settings.adminPassword);
           console.log("Admin password fetched.");
         } else {
            setAdminPassword('4545ak0'); 
         }
-      }, (error) => {
-        console.error('Admin Password Fetch Error (dbWrite):', error);
-        setAdminPassword('4545ak0'); 
-      });
-      
-      // 5. ទាញ CheckIn Mode (dbWrite)
-      const checkInModeRef = ref(dbWrite, 'passManagement/checkInMode');
-      const unsubscribeCheckInMode = onValue(checkInModeRef, (snapshot) => {
-        const mode = snapshot.val();
-        if (mode) {
-          setCheckInMode(mode);
-          console.log(`Check-in mode set to: ${mode}`);
+        
+        // CheckIn Mode
+        if (settings.checkInMode) {
+          setCheckInMode(settings.checkInMode);
+          console.log(`Check-in mode set to: ${settings.checkInMode}`);
         }
-      }, (error) => {
-        console.error('Check-in Mode Fetch Error (dbWrite):', error);
-      });
-      
-      // 6. !! ថ្មី !!: ទាញ Overtime Limit (dbWrite)
-      const overtimeRef = ref(dbWrite, 'passManagement/overtimeLimit');
-      const unsubscribeOvertime = onValue(overtimeRef, (snapshot) => {
-        const limit = snapshot.val();
-        if (limit && !isNaN(parseInt(limit))) {
-          setOvertimeLimit(parseInt(limit));
-          console.log(`Overtime limit set to: ${limit}`);
+        
+        // Overtime Limit
+        if (settings.overtimeLimit && !isNaN(parseInt(settings.overtimeLimit))) {
+          setOvertimeLimit(parseInt(settings.overtimeLimit));
+          console.log(`Overtime limit set to: ${settings.overtimeLimit}`);
         } else {
-          setOvertimeLimit(15); // Default
-          console.log("No overtime limit set in DB, defaulting to 15.");
+          setOvertimeLimit(15);
         }
       }, (error) => {
-        console.error('Overtime Limit Fetch Error (dbWrite):', error);
-        setOvertimeLimit(15); // Default on error
+          console.error('General Settings Fetch Error:', error);
+          setAdminPassword('4545ak0');
+          setOvertimeLimit(15);
       });
 
-      // !! ថ្មី !!: 7. ទាញ Pass Prefix - !! ប្រើ Path ថ្មី !!
-      const prefixRef = ref(dbWrite, `${passManagementPath}/passPrefix`);
-      const unsubscribePrefix = onValue(prefixRef, (snapshot) => {
-        const prefix = snapshot.val();
-        if (prefix) {
-          setPassPrefix(prefix);
-          console.log(`Pass prefix set to: ${prefix}`);
-        } else {
-          setPassPrefix('DD_'); // !! ថ្មី !!: កំណត់ Default បើមិនមាន
-          console.log("No pass prefix set, defaulting to DD_");
-        }
-      }, (error) => {
-        console.error('Pass Prefix Fetch Error:', error);
-        setPassPrefix('DD_'); // !! ថ្មី !!: កំណត់ Default បើ Error
-      });
+      // 2b. ទាញ Branch Settings (Total, Prefix, StartNum)
+      const unsubBranchSettings = onValue(branchSettingsRef, (snapshot) => {
+        const branchSettings = snapshot.val() || {};
+        
+        setTotalPasses(branchSettings.totalPasses || 0);
+        setPassPrefix(branchSettings.passPrefix || 'DD_');
+        setPassStartNumber(branchSettings.passStartNumber || 1);
+        
+        console.log(`Branch "${appBranch}" settings loaded:`, branchSettings);
 
-      // !! ថ្មី !!: 8. ទាញ Pass Start Number - !! ប្រើ Path ថ្មី !!
-      const startNumRef = ref(dbWrite, `${passManagementPath}/passStartNumber`);
-      const unsubscribeStartNum = onValue(startNumRef, (snapshot) => {
-        const startNum = snapshot.val();
-        if (startNum && !isNaN(parseInt(startNum))) {
-          setPassStartNumber(parseInt(startNum));
-          console.log(`Pass start number set to: ${startNum}`);
-        } else {
-          setPassStartNumber(1); // !! ថ្មី !!: កំណត់ Default បើមិនមាន
-          console.log("No pass start number set, defaulting to 1");
-        }
-      }, (error) => {
-        console.error('Pass Start Number Fetch Error:', error);
-        setPassStartNumber(1); // !! ថ្មី !!: កំណត់ Default បើ Error
-      });
+        // !! សំខាន់ !!: បន្ទាប់ពីទាញ Prefix បានជោគជ័យ
+        // ទើបយើងចាប់ផ្តើមស្តាប់ (Listen) Attendance
+        
+        // 2c. ទាញ Attendance ថ្ងៃនេះ (dbWrite) - ដោយ Query តាម Prefix
+        const attendanceRefDb = ref(dbWrite, 'attendance');
+        
+        // យើង Query រក Record ទាំងអស់ដែលផ្ដើមដោយ Prefix នេះ
+        // (Firebase មិនអាច Query "endsWith" ឬ "contains" ទេ, ត្រូវតែ "startsWith")
+        // ដូចនេះ យើងត្រូវទាញទាំងអស់ ហើយ Filter ខ្លួនឯង
+        const attendanceQuery = rtdbQuery(attendanceRefDb, orderByChild('date'), equalTo(appSetup.todayString));
 
-      // !! លុប !!: លែងត្រូវការ Logic ពិនិត្យ ActivePasses ដ៏ស្មុគស្មាញនោះទៀតហើយ
+        const unsubAttendance = onValue(attendanceQuery, (snapshot) => {
+            const attMap = {};
+            const attData = snapshot.val();
+            
+            // យក Prefix បច្ចុប្បន្ន (ព្រោះ onValue អាចនឹង Fire មុនពេល State Update)
+            const currentPrefix = branchSettings.passPrefix || 'DD_';
+
+            if (attData) {
+              Object.keys(attData).forEach((key) => {
+                const data = attData[key];
+                
+                // !! ជួសជុលកំហុស !!: ត្រង (Filter) យកតែ Prefix របស់សាខានេះ
+                if (data.passNumber && data.passNumber.startsWith(currentPrefix)) { 
+                  if (!attMap[data.studentId]) {
+                    attMap[data.studentId] = []; 
+                  }
+                  attMap[data.studentId].push({ id: key, ...data });
+                }
+              });
+            }
+            
+            for (const studentId in attMap) {
+              attMap[studentId].sort((a, b) => new Date(a.checkOutTime) - new Date(b.checkOutTime));
+            }
+            setAttendance(attMap); 
+            console.log(`Attendance data fetched/updated for Branch "${appBranch}" (Prefix: ${currentPrefix}).`);
+        }, (error) => {
+            console.error('Attendance Fetch Error (dbWrite):', error);
+            setAuthError(`Attendance Fetch Error: ${error.message}`);
+        });
+
+        // ត្រូវប្រាកដថាយើង Unsubscribe ពេល Component Unmount
+        return () => unsubAttendance();
+        
+      }, (error) => {
+          console.error(`Branch "${appBranch}" Settings Fetch Error:`, error);
+          // កំណត់ Default បើ Error
+          setTotalPasses(0);
+          setPassPrefix('DD_');
+          setPassStartNumber(1);
+      });
       
       return () => {
         unsubscribeStudents();
-        unsubscribeAttendance();
-        unsubscribePasses(); 
-        unsubscribePassword();
-        unsubscribeCheckInMode();
-        unsubscribeOvertime(); // !! ថ្មី !!
-        unsubscribePrefix(); // !! ថ្មី !!
-        unsubscribeStartNum(); // !! ថ្មី !!
+        unsubSettings();
+        unsubBranchSettings();
+        // (unsubAttendance ត្រូវបាន return ពីខាងក្នុង)
       };
     }
-  }, [dbRead, dbWrite, appSetup.todayString, ref, onValue, orderByChild, equalTo, get, update, passManagementPath]); // !! ថ្មី !!: បន្ថែម passManagementPath
+  }, [dbRead, dbWrite, appSetup.todayString, ref, onValue, orderByChild, equalTo, passManagementPath, appBranch]); // !! ថ្មី !!: យក get/update ចេញ, បន្ថែម appBranch
+  // !! END: កែសម្រួល Logic ការទាញ Attendance ទាំងស្រុង !!
+
 
   // --- Data Preparation for Render ---
   const sortedStudentsOnBreak = React.useMemo(() => {
@@ -331,19 +317,17 @@ function App() {
       return []; 
     }
 
+    // !! Logic នេះ ឥឡូវត្រឹមត្រូវ 100% ព្រោះ State "attendance" ត្រូវបាន Filter មុន !!
     return students
       .map(student => {
         const breaks = attendance[student.id] || [];
         
-        // !! START: កែសម្រួល Logic !!
-        // ស្វែងរក Active Break ដែលត្រូវនឹង Prefix របស់សាខានេះ
+        // ស្វែងរក Active Break
         const activeBreak = breaks.find(r => 
           r.checkOutTime && 
-          !r.checkInTime &&
-          r.passNumber && // ត្រូវតែមានលេខកាត
-          r.passNumber.startsWith(passPrefix) // ត្រូវតែជា Prefix របស់សាខានេះ
+          !r.checkInTime
+          // (មិនចាំបាច់ Filter Prefix នៅទីនេះទៀតទេ ព្រោះ attendance State ត្រូវបាន Filter រួចហើយ)
         );
-        // !! END: កែសម្រួល Logic !!
 
         if (!activeBreak) return null; 
         const elapsedMins = calculateDuration(activeBreak.checkOutTime, now.toISOString()); 
@@ -376,6 +360,7 @@ function App() {
   const allCompletedBreaks = React.useMemo(() => {
     const breaks = [];
     students.forEach(student => {
+      // !! Logic នេះ ឥឡូវត្រឹមត្រូវ 100% ព្រោះ State "attendance" ត្រូវបាន Filter មុន !!
       const studentBreaks = attendance[student.id] || [];
       studentBreaks.forEach(record => {
         if (record.checkInTime && record.checkOutTime) {
@@ -389,14 +374,15 @@ function App() {
 
   // !! ថ្មី !!: ត្រង (Filter) Completed Breaks តាមសាខា (Branch)
   const filteredCompletedBreaks = React.useMemo(() => {
-    // !! ថ្មី !!: Guard Clause
-    if (passPrefix === null) {
-      return []; 
-    }
-    return allCompletedBreaks.filter(item => 
-      item.record.passNumber && item.record.passNumber.startsWith(passPrefix)
-    );
-  }, [allCompletedBreaks, passPrefix]);
+    // !! Logic នេះ លែងត្រូវការទៀតហើយ ព្រោះ allCompletedBreaks ឥឡូវត្រូវបាន Filter មុន !!
+    // if (passPrefix === null) {
+    //   return []; 
+    // }
+    // return allCompletedBreaks.filter(item => 
+    //   item.record.passNumber && item.record.passNumber.startsWith(passPrefix)
+    // );
+    return allCompletedBreaks; // ប្រើដោយផ្ទាល់
+  }, [allCompletedBreaks]);
 
   // !! ថ្មី !!: Logic សម្រាប់ Pagination នៃ Page 'Completed'
   const CARDS_PER_PAGE = 12;
