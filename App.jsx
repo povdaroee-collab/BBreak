@@ -319,14 +319,14 @@ function App() {
         unsubscribeStartNum(); // !! ថ្មី !!
       };
     }
-  }, [dbRead, dbWrite, appSetup.todayString, ref, onValue, orderByChild, equalTo, get, update]);
+  }, [dbRead, dbWrite, appSetup.todayString, ref, onValue, orderByChild, equalTo, get, update, passManagementPath]); // !! ថ្មី !!: បន្ថែម passManagementPath
 
   // --- Data Preparation for Render ---
   const sortedStudentsOnBreak = React.useMemo(() => {
     return students
       .map(student => {
         const breaks = attendance[student.id] || [];
-        //const activeBreak = breaks.find(r => r.checkOutTime && !r.checkInTime);
+        
         // !! START: កែសម្រួល Logic !!
         // ស្វែងរក Active Break ដែលត្រូវនឹង Prefix របស់សាខានេះ
         const activeBreak = breaks.find(r => 
@@ -336,6 +336,7 @@ function App() {
           r.passNumber.startsWith(passPrefix) // ត្រូវតែជា Prefix របស់សាខានេះ
         );
         // !! END: កែសម្រួល Logic !!
+
         if (!activeBreak) return null; 
         const elapsedMins = calculateDuration(activeBreak.checkOutTime, now.toISOString()); 
         // !! កែសម្រួល !!: ប្រើ State 'overtimeLimit'
@@ -392,6 +393,7 @@ function App() {
     students.find(s => s.id === selectedStudentId), 
   [students, selectedStudentId]);
   
+  // !! ថ្មី !!: នេះគឺជាកន្លែងដែលការរាប់ កំពុងប្រើ កើតឡើង
   const studentsOnBreakCount = sortedStudentsOnBreak.length;
   
   
@@ -491,10 +493,18 @@ function App() {
         const allBreaks = Object.values(attData);
 
         // 4. គណនាកាតដែលកំពុងប្រើ ពីទិន្នន័យ Transaction
+        // !! START: ជួសជុលកំហុស !!
+        // ត្រូវតែត្រង (Filter) តាម passPrefix របស់សាខានេះ
         const usedPassNumbers = allBreaks
-          .filter(r => r.date === appSetup.todayString && r.checkOutTime && !r.checkInTime)
-          .map(r => r.passNumber)
-          .filter(Boolean);
+          .filter(r => 
+            r.date === appSetup.todayString && 
+            r.checkOutTime && 
+            !r.checkInTime &&
+            r.passNumber && // ត្រូវតែមានលេខកាត
+            r.passNumber.startsWith(passPrefix) // ត្រូវតែជា Prefix របស់សាខានេះ
+          )
+          .map(r => r.passNumber);
+        // !! END: ជួសជុលកំហុស !!
         
         const passesInUseCount = usedPassNumbers.length;
 
@@ -565,7 +575,9 @@ function App() {
       } else {
         // Transaction បរាជ័យ (ភាគច្រើនព្រោះកាតពេញ)
         console.log("Check-out aborted (Passes were full or transaction failed).");
-        setAuthError(`${tRef.current.statusPassOut} (${totalPasses}/${totalPasses})`);
+        // !! កែសម្រួល !!: បង្ហាញ passesInUseCount ដែលត្រឹមត្រូវ
+        const currentPassesInUse = sortedStudentsOnBreak.length; // ប្រើ State ដែលបានត្រងរួច
+        setAuthError(`${tRef.current.statusPassOut} (${currentPassesInUse}/${totalPasses})`);
         speak(tRef.current.statusPassOut);
       }
 
@@ -573,7 +585,7 @@ function App() {
       console.error('Check-out Transaction Error:', error);
       setAuthError(`Check-out Error: ${error.message}`);
     }
-  }, [dbWrite, students, totalPasses, speak, ref, push, runTransaction, appSetup.todayString, tRef, passPrefix, passStartNumber]); // !! ថ្មី !!: បន្ថែម passPrefix, passStartNumber
+  }, [dbWrite, students, totalPasses, speak, ref, push, runTransaction, appSetup.todayString, tRef, passPrefix, passStartNumber, sortedStudentsOnBreak.length]); // !! ថ្មី !!: បន្ថែម passPrefix, passStartNumber, sortedStudentsOnBreak.length
   // !! END: កែសម្រួល HandleCheckOut ទាំងស្រុង !!
   
   // !! START: កែសម្រួល HandleCheckIn !!
