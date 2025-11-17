@@ -7,7 +7,8 @@ const {
   IconSpecial, IconDotsVertical, IconLock, IconQrCode, IconPencil,
   IconInfo, IconCheckCircleFill, IconPencilSquare,
   IconArrowLeft, IconArrowRight, // !! ថ្មី !!: ទាញ Icons ថ្មី
-  IconCameraRotate // !! ថ្មី !!: ទាញ Icon ត្រឡប់កាមេរ៉ា
+  IconCameraRotate, // !! ថ្មី !!: បន្ថែម Icon ត្រឡប់កាមេរ៉ា
+  IconToggleLeft, IconToggleRight // !! ថ្មី !!: បន្ថែម Icons ថ្មី
 } = window.appSetup;
 
 // =================================================================
@@ -23,8 +24,8 @@ window.StudentCard = ({
   totalPasses, 
   t, 
   checkInMode,
-  overtimeLimit, // !! ថ្មី !!: ទទួល Prop នាទី Overtime
-  appBranch // !! ថ្មី !!: ទទួល Prop សាខា
+  overtimeLimit, // !! ថ្មី !!
+  appBranch // !! ថ្មី !!
 }) => {
   
   const studentBreaks = attendance[student.id] || [];
@@ -41,16 +42,12 @@ window.StudentCard = ({
   
   if (activeBreak) {
     const elapsedMins = calculateDuration(activeBreak.checkOutTime, now.toISOString());
-    // !! កែសម្រួល !!: ប្រើ overtimeLimit ពី Prop
-    const isOvertime = elapsedMins > overtimeLimit; 
+    const isOvertime = elapsedMins > overtimeLimit;
     
-    // !! START: ជួសជុលកំហុស !!
-    // 1. បន្ថែម (Branch)
-    // 2. កែ t.statusMinutes ទៅ t.minutes
-    const branchDisplay = activeBreak.branch ? ` (${activeBreak.branch})` : (appBranch ? ` (${appBranch})` : ''); // !! កែសម្រួល !!: ព្យាយាមទាញពី Record មុន
-    const passNumberDisplay = activeBreak.passNumber ? ` (${t.statusPass}: ${activeBreak.passNumber})` : '';
-    statusText = `${t.statusOnBreak}${passNumberDisplay}${branchDisplay} (${elapsedMins} ${t.minutes})`; 
-    // !! END: ជួសជុលកំហុស !!
+    // !! ថ្មី !!: បន្ថែម (A) ឬ (B) និងជួសជុល Bug 'undefined'
+    const branchDisplay = activeBreak.branch ? ` (${activeBreak.branch})` : ''; // !! កែសម្រួល !!: ប្រើ activeBreak.branch
+    const passNumberDisplay = activeBreak.passNumber ? `${t.statusPass}: ${activeBreak.passNumber}` : '';
+    statusText = `${t.statusOnBreak} (${passNumberDisplay}${branchDisplay}) (${elapsedMins} ${t.minutes})`; 
     
     statusClass = isOvertime 
       ? 'bg-red-600 text-white animate-pulse' 
@@ -64,11 +61,9 @@ window.StudentCard = ({
   } else if (completedBreaks.length > 0) {
     const lastBreak = completedBreaks[completedBreaks.length - 1]; 
     const duration = calculateDuration(lastBreak.checkOutTime, lastBreak.checkInTime);
-    // !! កែសម្រួល !!: ប្រើ overtimeLimit ពី Prop
     const isCompletedOvertime = duration > overtimeLimit;
     const overtimeMins = isCompletedOvertime ? duration - overtimeLimit : 0;
     
-    // !! ជួសជុលកំហុស !!: កែ t.statusMinutes ទៅ t.minutes
     statusText = isCompletedOvertime
       ? `${t.statusCompleted} (${t.statusOvertime} ${overtimeMins} ${t.minutes})`
       : `${t.statusCompleted} (${duration} ${t.minutes})`; 
@@ -99,7 +94,7 @@ window.StudentCard = ({
     student.photoUrl ||
     `https://placehold.co/128x128/EBF4FF/76A9FA?text=${student.name ? student.name.charAt(0) : 'N'}`;
 
-  // សម្រេចចិត្តថាតើប៊ូតុង "ចូលវិញ" ត្រូវធ្វើអ្វី
+  // !! ថ្មី !!: សម្រេចចិត្តថាតើប៊ូតុង "ចូលវិញ" ត្រូវធ្វើអ្វី
   const checkInAction = checkInMode === 'scan' 
     ? handleOpenQrScanner 
     : () => handleCheckIn(student.id);
@@ -128,8 +123,7 @@ window.StudentCard = ({
         }}
       />
       
-      {/* !! START: កែសម្រួល Layout តាមសំណើ !! */}
-      {/* 1. បន្ថែម pt-16 និង ព័ត៌មានសិស្ស ត្រឡប់មកវិញ */}
+      {/* !! ថ្មី !!: បន្ថែម pt-16 (Padding Top) ត្រឡប់មកវិញ */}
       <div className="pt-16 text-center">
         <p className="text-3xl font-bold text-white">
           {student.name || t.noName}
@@ -141,70 +135,63 @@ window.StudentCard = ({
           {t.class}: {student.class || 'N/A'}
         </p>
       </div>
+      
+      {/* --- Case 1: កំពុងសម្រាក (Active Break) --- */}
+      {activeBreak && (
+        <>
+          <div className="my-6 text-center">
+            <p className={`inline-flex items-center px-5 py-2 rounded-full text-md font-semibold ${statusClass}`}>
+              {statusText}
+              {isSpecialCase && <IconSpecial />}
+            </p>
+          </div>
+          <button
+            onClick={checkInAction} // !! កែសម្រួល !!
+            disabled={!canCheckIn}
+            className="flex items-center justify-center w-full px-4 py-4 rounded-full text-lg text-blue-800 font-bold transition-all transform hover:scale-105 shadow-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+          >
+            <IconCheckIn />
+            {t.checkIn}
+          </button>
+        </>
+      )}
 
-      <div className="my-6">
-
-        {/* Case 1: Student IS ON BREAK (Can Check In) */}
-        {canCheckIn && (
-          <>
-            <div className="text-center">
-              <p className={`inline-flex items-center px-5 py-2 rounded-full text-md font-semibold ${statusClass}`}>
-                {statusText}
-                {isSpecialCase && <IconSpecial />}
-              </p>
-            </div>
-            <div className="flex flex-col space-y-3 mt-6">
-              <button
-                onClick={checkInAction}
-                disabled={!canCheckIn}
-                className="flex items-center justify-center w-full px-4 py-4 rounded-full text-lg text-blue-800 font-bold transition-all transform hover:scale-105 shadow-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
-              >
-                <IconCheckIn />
-                {t.checkIn}
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Case 2: Student IS NOT ON BREAK (Can't Check In) AND CAN Check Out */}
-        {!canCheckIn && canCheckOut && (
-          // 2. ដាក់ Status Text មុន, ដាក់ Icon ខាងស្តាំ
+      {/* --- Case 2: មិនទាន់សម្រាក ឬ សម្រាករួច (No Active Break) --- */}
+      {!activeBreak && (
+        <div className="my-6">
           <div className="flex justify-center items-center space-x-4">
-            {/* ស្ថានភាព (Status) នៅខាងឆ្វេង */}
-            <div className="text-center">
-              <p className={`inline-flex items-center px-5 py-3 rounded-full text-lg font-semibold ${statusClass}`}>
-                {statusText}
-                {isSpecialCase && <IconSpecial />}
-              </p>
-            </div>
-
-            {/* ប៊ូតុង Icon "ចេញសម្រាក" ថ្មីនៅខាងស្តាំ */}
-            <button
-              onClick={() => handleCheckOut(student.id)}
-              className="flex-shrink-0 p-4 rounded-full text-lg text-white font-bold transition-all transform hover:scale-105 shadow-lg bg-red-500 hover:bg-red-600"
-              title={t.checkOut}
-            >
-              <IconCheckOut />
-            </button>
+            {/* Status Text */}
+            <p className={`inline-flex items-center px-5 py-2 rounded-full text-md font-semibold ${statusClass}`}>
+              {statusText}
+              {isSpecialCase && <IconSpecial />}
+            </p>
+            
+            {/* Check-out Button (បើអាច) */}
+            {canCheckOut && (
+              <button
+                onClick={() => handleCheckOut(student.id)}
+                disabled={!canCheckOut} 
+                className="flex items-center justify-center p-4 rounded-full text-lg text-white font-bold transition-all transform hover:scale-105 shadow-lg bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+              >
+                <IconCheckOut />
+              </button>
+            )}
+            
+            {/* Pass Out Warning (បើអស់កាត) */}
+            {!canCheckOut && statusText.startsWith(t.statusPassOut) && (
+              <div className="flex items-center justify-center p-4 rounded-full text-lg text-white font-bold bg-red-600/50 opacity-80 cursor-not-allowed">
+                <IconNoSymbol />
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Case 3: Student IS NOT ON BREAK (Can't Check In) AND CANNOT Check Out (Passes Full) */}
-        {!canCheckIn && !canCheckOut && (
-          <div className="flex items-center justify-center w-full px-4 py-4 rounded-full text-lg text-white font-bold bg-red-600/50 opacity-80 cursor-not-allowed">
-            <IconNoSymbol />
-            {/* statusText នឹងក្លាយជា "កាតអស់!" ក្នុងករណីនេះ */}
-            {statusText} 
-          </div>
-        )}
-      </div>
-      {/* !! END: កែសម្រួល Layout តាមសំណើ !! */}
+        </div>
+      )}
       
     </div>
   );
 };
 
-window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSelect, onDeleteClick, isSelectionMode, t, overtimeLimit }) => { // !! ថ្មី !!
+window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSelect, onDeleteClick, isSelectionMode, t, overtimeLimit }) => {
   
   const formatTime = (isoString) => {
     if (!isoString) return 'N/A';
@@ -216,7 +203,6 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
 
   const duration = calculateDuration(record?.checkOutTime, record?.checkInTime);
   
-  // !! កែសម្រួល !!: ប្រើ overtimeLimit ពី Prop
   const isOvertime = duration > overtimeLimit;
   const overtimeMins = isOvertime ? duration - overtimeLimit : 0;
   const cardColor = isOvertime 
@@ -228,7 +214,7 @@ window.CompletedStudentListCard = ({ student, record, onClick, isSelected, onSel
     student.photoUrl ||
     `https://placehold.co/64x64/EBF4FF/76A9FA?text=${student.name ? student.name.charAt(0) : 'N'}`;
 
-  // !! ថ្មី !!: បង្ហាញ Branch ពី Record
+  // !! ថ្មី !!: បង្ហាញ Branch (A/B)
   const branchDisplay = record.branch ? ` (${record.branch})` : '';
 
   return (
@@ -320,7 +306,7 @@ window.OnBreakStudentListCard = ({
     ? handleOpenQrScanner 
     : () => onCheckIn();
 
-  // !! ថ្មី !!: បង្ហាញ Branch ពី Record
+  // !! ថ្មី !!: បង្ហាញ Branch (A/B)
   const branchDisplay = record.branch ? ` (${record.branch})` : '';
 
   return (
@@ -583,10 +569,11 @@ window.DeleteConfirmationModal = ({ recordToDelete, onCancel, onConfirm, t }) =>
   };
 
 
-// !! START: កែសម្រួល QrScannerModal !!
+// !! START: កែសម្រួល QrScannerModal ទាំងស្រុង !!
 window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isScannerBusy, t }) => { 
   const [errorMessage, setErrorMessage] = useState(null);
-  const [facingMode, setFacingMode] = useState("environment"); // 'environment' (ក្រោយ) or 'user' (មុខ)
+  const [facingMode, setFacingMode] = useState("environment"); // កាមេរ៉ាក្រោយ
+  const [isMirrored, setIsMirrored] = useState(false); // State សម្រាប់បិទ/បើក mirror
   
   const html5QrCodeRef = React.useRef(null);
   const scannerId = "qr-reader"; 
@@ -594,14 +581,18 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
   // Function to stop the scanner
   const stopScanner = () => {
     if (html5QrCodeRef.current) {
-      html5QrCodeRef.current.stop()
-        .then(() => {
-          console.log("QR Scanner stopped.");
-        })
-        .catch(err => {
-          console.warn("QR Scanner stop error (probably already stopped).", err);
-        });
-      html5QrCodeRef.current = null;
+      try {
+        html5QrCodeRef.current.stop()
+          .then(() => {
+            console.log("QR Scanner stopped.");
+          })
+          .catch(err => {
+            console.warn("QR Scanner stop error (probably already stopped).", err);
+          });
+        html5QrCodeRef.current = null;
+      } catch (e) {
+        console.warn("Error stopping scanner:", e);
+      }
     }
   };
 
@@ -621,7 +612,7 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
   
       html5QrCode.start({ facingMode: mode }, config, qrCodeSuccessCallback)
         .catch(err => {
-          console.error("Unable to start scanner", err);
+          console.error(`Unable to start ${mode} camera`, err);
           setErrorMessage(t.cameraError);
         });
     }
@@ -646,17 +637,48 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
     return () => {
       stopScanner();
     };
-  }, [isOpen, isScannerBusy, facingMode]); // !! ថ្មី !!: Re-run effect if facingMode changes
+  }, [isOpen, isScannerBusy, facingMode]); // !! ថ្មី !!: បន្ថែម facingMode
 
-  // Handler to flip camera
+  // !! ថ្មី !!: Effect សម្រាប់គ្រប់គ្រង Mirror (ដាច់ដោយឡែក)
+  useEffect(() => {
+    if (!isOpen || isScannerBusy) return;
+
+    // រង់ចាំឲ្យកាមេរ៉ាបើក
+    const timeoutId = setTimeout(() => {
+      try {
+        const videoElement = document.querySelector(`#${scannerId} video`);
+        if (videoElement) {
+          if (facingMode === 'user') {
+            // កាមេរ៉ាមុខ: ប្រើ State 'isMirrored'
+            videoElement.style.setProperty('transform', isMirrored ? 'scaleX(-1)' : 'scaleX(1)', 'important');
+            console.log(`Front camera mirror set to: ${isMirrored}`);
+          } else {
+            // កាមេរ៉ាក្រោយ: បង្ខំឲ្យធម្មតា (មិនបញ្ចាស់) ជានិច្ច
+            videoElement.style.setProperty('transform', 'scaleX(1)', 'important');
+            console.log('Back camera forced to non-mirror.');
+          }
+        }
+      } catch (e) {
+        console.error("Error applying mirror style:", e);
+      }
+    }, 200); // បង្កើនเวลารอคอยបន្តិច
+
+    return () => clearTimeout(timeoutId);
+
+  }, [isOpen, isScannerBusy, facingMode, isMirrored]); // !! ថ្មី !!: បន្ថែម isMirrored
+
+  // !! ថ្មី !!: Handler សម្រាប់ត្រឡប់កាមេរ៉ា
   const handleFlipCamera = () => {
-    if (isScannerBusy) return; // Don't flip if busy
-    
-    const newMode = facingMode === "environment" ? "user" : "environment";
-    setFacingMode(newMode);
-    
-    // Stop current scanner, effect will restart it with new mode
-    stopScanner(); 
+    if (isScannerBusy) return;
+    setFacingMode(prevMode => (prevMode === "user" ? "environment" : "user"));
+    // Reset mirror state ទៅតាម Default របស់ Library (បញ្ចាស់)
+    // តែ State របស់យើងនៅតែជា false (ធម្មតា)
+    setIsMirrored(false); 
+  };
+
+  // !! ថ្មី !!: Handler សម្រាប់បិទ/បើក Mirror
+  const handleToggleMirror = () => {
+    setIsMirrored(prev => !prev);
   };
 
   if (!isOpen) return null;
@@ -685,20 +707,25 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
         >
           <IconCameraRotate className="w-6 h-6" />
         </button>
+
+        {/* !! ថ្មី !!: ប៊ូតុង បិទ/បើក Mirror (បង្ហាញតែពេល dùng កាមេរ៉ាមុខ) */}
+        {facingMode === 'user' && (
+          <button
+            onClick={handleToggleMirror}
+            className="absolute top-16 left-4 text-gray-800 bg-gray-200 p-2 rounded-full z-10"
+            title={t.toggleMirror}
+          >
+            {isMirrored ? <IconToggleRight className="w-6 h-6" /> : <IconToggleLeft className="w-6 h-6" />}
+          </button>
+        )}
         
         <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
           {t.scanToComeBack}
         </h3>
         
-        {/* !! ថ្មី !!: បន្ថែម CSS style 
-          - Video របស់ html5-qrcode ប្រើ "transform: scaleX(-1)" សម្រាប់កាមេរ៉ាមុខ
-          - យើងត្រូវបិទវា (Disable) ដោយប្រើ "transform: none !important"
-        */}
-        <style>{`
-          #${scannerId} video {
-            transform: ${facingMode === 'user' ? 'none' : 'scaleX(-1)'} !important;
-          }
-        `}</style>
+        {/* !! ថ្មី !!: បន្ថែម <style> tag ដើម្បីបង្ខំឲ្យ Video មិនបញ្ចាស់ */}
+        {/* (បានដកចេញ ព្រោះយើងប្រើ JavaScript setTimeout វិញ) */}
+
         <div id={scannerId} className="w-full"></div> 
         
         <div className="mt-4 text-center h-12">
