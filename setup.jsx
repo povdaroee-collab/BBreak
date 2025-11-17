@@ -189,6 +189,8 @@ const IconLanguage = ({ className = "w-6 h-6" }) => (
 const IconPalette = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
 );
+
+// !! ថ្មី !!: បន្ថែម Icons សម្រាប់ Mirror Toggle
 const IconToggleLeft = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v12a1 1 0 01-1 1h-3a1 1 0 00-1-1v-1a2 2 0 10-4 0v1a1 1 0 00-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
 );
@@ -289,6 +291,7 @@ const translations = {
     scanned: 'ស្កេនបាន',
     scanPassNotFound: (pass) => `កាត ${pass} បានចូលវិញហើយ`,
     flipCamera: 'ត្រឡប់កាមេរ៉ា', // !! ថ្មី !!
+    toggleMirror: 'បិទ/បើក ការបញ្ចាស់', // !! ថ្មី !!
     alertErrorTitle: 'មានបញ្ហា',
     alertSuccessTitle: 'បានជោគជ័យ',
     invalidNumber: 'សូមបញ្ចូលតែตัวเลขប៉ុណ្ណោះ។',
@@ -384,6 +387,7 @@ const translations = {
     scanned: 'Scanned',
     scanPassNotFound: (pass) => `Pass ${pass} already checked in`,
     flipCamera: 'Flip Camera', // !! ថ្មី !!
+    toggleMirror: 'Toggle Mirror', // !! ថ្មី !!
     alertErrorTitle: 'Error',
     alertSuccessTitle: 'Success',
     invalidNumber: 'Please enter a valid number.',
@@ -489,8 +493,8 @@ window.appSetup = {
   IconSettings,
   IconLanguage,
   IconPalette,
-  IconToggleLeft,
-  IconToggleRight,
+  IconToggleLeft, // !! ថ្មី !!
+  IconToggleRight, // !! ថ្មី !!
   IconTimer, // ថ្មី
   IconArrowLeft, // !! ថ្មី !!
   IconArrowRight, // !! ថ្មី !!
