@@ -216,6 +216,11 @@ const IconType = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 12V6a2 2 0 114 0v6m-2 6v-3m-6-3h12a2 2 0 012 2v3a2 2 0 01-2 2H9a2 2 0 01-2-2v-3a2 2 0 012-2z"></path></svg>
 );
 
+// !! ថ្មី !!: Icon សម្រាប់ត្រឡប់កាមេរ៉ា
+const IconCameraRotate = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 10h4l-2-2m-2 2l2-2m-2 2v4a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4m0 0l-2 2m2-2l-2 2m2-2H8m8 6h2a2 2 0 002-2v-4a2 2 0 00-2-2h-4a2 2 0 00-2 2v4a2 2 0 002 2h2m-4-4a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+);
+
 
 // =================================================================
 // 5. BACKGROUND STYLES
@@ -283,6 +288,7 @@ const translations = {
     processing: 'កំពុងដំណើរការ...',
     scanned: 'ស្កេនបាន',
     scanPassNotFound: (pass) => `កាត ${pass} បានចូលវិញហើយ`,
+    flipCamera: 'ត្រឡប់កាមេរ៉ា', // !! ថ្មី !!
     alertErrorTitle: 'មានបញ្ហា',
     alertSuccessTitle: 'បានជោគជ័យ',
     invalidNumber: 'សូមបញ្ចូលតែตัวเลขប៉ុណ្ណោះ។',
@@ -377,6 +383,7 @@ const translations = {
     processing: 'Processing...',
     scanned: 'Scanned',
     scanPassNotFound: (pass) => `Pass ${pass} already checked in`,
+    flipCamera: 'Flip Camera', // !! ថ្មី !!
     alertErrorTitle: 'Error',
     alertSuccessTitle: 'Success',
     invalidNumber: 'Please enter a valid number.',
@@ -489,4 +496,5 @@ window.appSetup = {
   IconArrowRight, // !! ថ្មី !!
   IconHash, // !! ថ្មី !!
   IconType, // !! ថ្មី !!
+  IconCameraRotate, // !! ថ្មី !!
 };
