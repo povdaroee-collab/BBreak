@@ -6,7 +6,8 @@ const {
   IconTicket, IconClose, IconTrash, IconNoSymbol, IconAlert,
   IconSpecial, IconDotsVertical, IconLock, IconQrCode, IconPencil,
   IconInfo, IconCheckCircleFill, IconPencilSquare,
-  IconArrowLeft, IconArrowRight // !! ថ្មី !!: ទាញ Icons ថ្មី
+  IconArrowLeft, IconArrowRight, // !! ថ្មី !!: ទាញ Icons ថ្មី
+  IconCameraRotate // !! ថ្មី !!: ទាញ Icon ត្រឡប់កាមេរ៉ា
 } = window.appSetup;
 
 // =================================================================
@@ -582,59 +583,81 @@ window.DeleteConfirmationModal = ({ recordToDelete, onCancel, onConfirm, t }) =>
   };
 
 
+// !! START: កែសម្រួល QrScannerModal !!
 window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isScannerBusy, t }) => { 
   const [errorMessage, setErrorMessage] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment"); // 'environment' (ក្រោយ) or 'user' (មុខ)
   
   const html5QrCodeRef = React.useRef(null);
   const scannerId = "qr-reader"; 
 
+  // Function to stop the scanner
+  const stopScanner = () => {
+    if (html5QrCodeRef.current) {
+      html5QrCodeRef.current.stop()
+        .then(() => {
+          console.log("QR Scanner stopped.");
+        })
+        .catch(err => {
+          console.warn("QR Scanner stop error (probably already stopped).", err);
+        });
+      html5QrCodeRef.current = null;
+    }
+  };
+
+  // Function to start the scanner
+  const startScanner = (mode) => {
+    setErrorMessage(null);
+    const element = document.getElementById(scannerId);
+    if (element) {
+      const html5QrCode = new Html5Qrcode(scannerId);
+      html5QrCodeRef.current = html5QrCode;
+      
+      const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        onScanSuccess(decodedText);
+      };
+      
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  
+      html5QrCode.start({ facingMode: mode }, config, qrCodeSuccessCallback)
+        .catch(err => {
+          console.error("Unable to start scanner", err);
+          setErrorMessage(t.cameraError);
+        });
+    }
+  };
+
+  // Effect to manage scanner start/stop
   useEffect(() => {
-    
     if (isOpen) {
-      setErrorMessage(null);
-      
       if (!isScannerBusy) {
-        const element = document.getElementById(scannerId);
-        if (element) {
-            const html5QrCode = new Html5Qrcode(scannerId);
-            html5QrCodeRef.current = html5QrCode;
-            
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-              onScanSuccess(decodedText);
-            };
-            
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
-            html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-              .catch(err => {
-                console.error("Unable to start scanner", err);
-                setErrorMessage(t.cameraError);
-              });
-        }
+        // Start scanner on open
+        startScanner(facingMode);
+      } else {
+        // Stop if busy
+        stopScanner();
       }
-      
     } else {
-      if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop()
-          .then(res => {
-            console.log("QR Scanner stopped (on close or busy).");
-          })
-          .catch(err => {
-            console.warn("QR Scanner stop error (probably already stopped).", err);
-          });
-        html5QrCodeRef.current = null;
-      }
+      // Stop scanner on close
+      stopScanner();
     }
     
+    // Cleanup function
     return () => {
-      if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop()
-          .catch(err => { /* មិនអីទេ បើ Stop រួចហើយ */ });
-        html5QrCodeRef.current = null;
-      }
+      stopScanner();
     };
+  }, [isOpen, isScannerBusy, facingMode]); // !! ថ្មី !!: Re-run effect if facingMode changes
+
+  // Handler to flip camera
+  const handleFlipCamera = () => {
+    if (isScannerBusy) return; // Don't flip if busy
     
-  }, [isOpen, isScannerBusy]); 
+    const newMode = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(newMode);
+    
+    // Stop current scanner, effect will restart it with new mode
+    stopScanner(); 
+  };
 
   if (!isOpen) return null;
 
@@ -654,10 +677,28 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
           <IconClose />
         </button>
         
+        {/* !! ថ្មី !!: ប៊ូតុងត្រឡប់កាមេរ៉ា */}
+        <button
+          onClick={handleFlipCamera}
+          className="absolute top-4 left-4 text-gray-800 bg-gray-200 p-2 rounded-full z-10"
+          title={t.flipCamera}
+        >
+          <IconCameraRotate className="w-6 h-6" />
+        </button>
+        
         <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
           {t.scanToComeBack}
         </h3>
         
+        {/* !! ថ្មី !!: បន្ថែម CSS style 
+          - Video របស់ html5-qrcode ប្រើ "transform: scaleX(-1)" សម្រាប់កាមេរ៉ាមុខ
+          - យើងត្រូវបិទវា (Disable) ដោយប្រើ "transform: none !important"
+        */}
+        <style>{`
+          #${scannerId} video {
+            transform: ${facingMode === 'user' ? 'none' : 'scaleX(-1)'} !important;
+          }
+        `}</style>
         <div id={scannerId} className="w-full"></div> 
         
         <div className="mt-4 text-center h-12">
@@ -689,6 +730,7 @@ window.QrScannerModal = ({ isOpen, onClose, onScanSuccess, lastScannedInfo, isSc
     </div>
   );
 };
+// !! END: កែសម្រួល QrScannerModal !!
 
 window.InfoAlertModal = ({ alertInfo, onClose, t }) => {
   if (!alertInfo.isOpen) return null;
