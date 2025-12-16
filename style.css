@@ -1,0 +1,165 @@
+@import url("https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;700&display=swap");
+
+body,
+.font-kantumruy {
+  font-family: "Kantumruy Pro", sans-serif;
+}
+/* =========================================
+   1. DASHBOARD LAYOUT (កែប្រែ Grid)
+   ========================================= */
+
+/* Class សម្រាប់ប្រអប់ធំដែលផ្ទុកកាតទាំងអស់ */
+.dashboard-grid-container {
+  display: grid;
+  gap: 1.5rem; /* គម្លាតរវាងកាត */
+  padding: 1rem;
+
+  /* Mobile (Small Screen): 1 ជួរ */
+  grid-template-columns: repeat(1, 1fr);
+}
+
+/* Tablet (Medium Screen): 2 ជួរ */
+@media (min-width: 768px) {
+  .dashboard-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* PC / Laptop (Large Screen): 3 ជួរ (តាមសំណើ) */
+@media (min-width: 1024px) {
+  .dashboard-grid-container {
+    grid-template-columns: repeat(3, 1fr); /* បង្ហាញ 3 កាតក្នុងមួយជួរ */
+  }
+}
+
+/* =========================================
+   2. NEON CARD ANIMATION (សកម្មភាពថ្មីៗ)
+   ========================================= */
+
+/* កំណត់ចលនាវិល (Rotate Animation) */
+@keyframes spin-border {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Class សម្រាប់កាតដែលមានពន្លឺរត់ */
+.neon-activity-card {
+  position: relative;
+  overflow: hidden; /* កុំឱ្យពន្លឺហៀរចេញក្រៅ */
+  border-radius: 16px;
+  padding: 3px; /* ទំហំនៃបន្ទាត់ពន្លឺ (Border Width) */
+  margin-bottom: 1rem;
+
+  /* ពណ៌ផ្ទៃខាងក្រោយ (Fallback) */
+  background-color: #3b4cca;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+/* Effect ពេលដាក់ Mouse លើ (Optional) */
+.neon-activity-card:hover {
+  transform: translateY(-2px);
+}
+
+/* បង្កើតពន្លឺពណ៌បៃតងភ្លឺ (#39FF14) */
+.neon-activity-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%; /* ធំជាងកាតដើម្បីពេលវិលទៅមិនដាច់ */
+  height: 250%;
+
+  /* បង្កើតកន្ទុយពន្លឺ (Conic Gradient) */
+  background: conic-gradient(
+    transparent 0deg,
+    transparent 270deg,
+    #39ff14 320deg,
+    /* ពណ៌បៃតងភ្លឺចាប់ផ្តើម */ #39ff14 360deg /* ពណ៌បៃតងភ្លឺខ្លាំង */
+  );
+
+  /* ដាក់ឱ្យវិល */
+  animation: spin-border 4s linear infinite;
+  z-index: 0;
+}
+
+/* ស្រទាប់ខាងក្នុង (Inner Mask) ដើម្បីបាំងកណ្តាល */
+.neon-card-content {
+  position: relative;
+  background: #4c5fd9; /* ⚠️ សំខាន់៖ ពណ៌នេះត្រូវតែដូចពណ៌កាតដើមរបស់អ្នក */
+  border-radius: 14px; /* តូចជាង parent បន្តិច */
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  padding: 1rem; /* គម្លាតខាងក្នុង */
+
+  /* រៀបចំធាតុខាងក្នុង (Flexbox) */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ១. បង្កើតចលនាវិល (Rotate Animation) */
+@keyframes spin-neon {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* ២. Class សម្រាប់កាតខាងក្រៅ (Wrapper) */
+.neon-running-card {
+  position: relative;
+  overflow: hidden; /* កុំឱ្យពន្លឺហៀរចេញក្រៅ */
+  border-radius: 16px; /* កោងកែង */
+  padding: 3px; /* ទំហំនៃបន្ទាត់ពន្លឺ (Border Width) */
+  margin-bottom: 12px;
+
+  /* ពណ៌ផ្ទៃខាងក្រោយបណ្តោះអាសន្ន */
+  background-color: #2b3595;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3); /* ស្រមោលបៃតងតិចៗ */
+}
+
+/* ៣. បង្កើតពន្លឺពណ៌បៃតងភ្លឺ (#39FF14) រត់ជុំវិញ */
+.neon-running-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%; /* ធ្វើឱ្យធំជាងកាត ដើម្បីពេលវិលទៅមិនដាច់ */
+  height: 200%;
+
+  /* បង្កើតកន្ទុយពន្លឺ (Conic Gradient) */
+  background: conic-gradient(
+    transparent 0deg,
+    transparent 200deg,
+    #39ff14 300deg,
+    /* ពណ៌បៃតងចាប់ផ្តើម */ #ccffcc 360deg /* ពណ៌សលាយបៃតងនៅក្បាលអោយភ្លឺខ្លាំង */
+  );
+
+  /* ដាក់ឱ្យវិល */
+  animation: spin-neon 10s linear infinite; /* ល្បឿន 3 វិនាទី */
+  z-index: 0;
+}
+
+/* ៤. ផ្ទៃខាងក្នុងដើម្បីបាំងកណ្តាល (Card Body) */
+.neon-inner-content {
+  position: relative;
+  background: #3644c7; /* ⚠️ ពណ៌នេះត្រូវតែដូចពណ៌កាតដើមរបស់អ្នក ដើម្បីមើលទៅដាច់ */
+  border-radius: 14px; /* តូចជាង parent បន្តិច */
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  padding: 12px 16px; /* គម្លាតខាងក្នុង */
+
+  /* រៀបចំធាតុខាងក្នុង */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
