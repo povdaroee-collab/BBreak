@@ -1,5 +1,5 @@
 // =================================================================
-// 5. APP LOGIC & RENDER (FULL UPDATED: SCIENTIFIC DARK GREEN THEME)
+// 5. APP LOGIC & RENDER (FULL UPDATED: MOBILE UI FIXES)
 // =================================================================
 function App() {
   // !! ទាញអថេរ និង Functions ពី Global Scope
@@ -10,7 +10,6 @@ function App() {
     firebaseConfigRead,
     firebaseConfigWrite,
     translations,
-    // backgroundStyles, // យើងនឹងប្រើ Custom Green Background ជំនួសវិញ
     passManagementPath,
     appBranch,
     IconSearch,
@@ -50,8 +49,8 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [onBreakSearchTerm, setOnBreakSearchTerm] = useState("");
 
-  // State សម្រាប់ Keyboard Navigation
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -88,7 +87,6 @@ function App() {
     localStorage.getItem("break_lang") || "km"
   );
 
-  // Custom Green Background State (Ignore old styles)
   const [background, setBackground] = useState("green-scientific");
 
   const [adminPassword, setAdminPassword] = useState(null);
@@ -106,11 +104,7 @@ function App() {
   const tRef = React.useRef(t);
   const attendanceRef = React.useRef(attendance);
   const touchStartXRef = React.useRef(null);
-
-  // Ref សម្រាប់ Input ស្វែងរក (Auto Focus)
   const searchInputRef = React.useRef(null);
-
-  // Ref សម្រាប់ Scroll
   const searchResultRefs = React.useRef([]);
 
   // !! Firebase Functions
@@ -158,7 +152,6 @@ function App() {
     attendanceRef.current = attendance;
   }, [attendance]);
 
-  // Auto Focus ពេលចូលមកទំព័រ Search
   useEffect(() => {
     if (currentPage === "search") {
       setTimeout(() => {
@@ -169,7 +162,6 @@ function App() {
     }
   }, [currentPage]);
 
-  // Scroll ទៅរកឈ្មោះដែលបាន Select (Arrow Down)
   useEffect(() => {
     if (selectedIndex !== -1 && searchResultRefs.current[selectedIndex]) {
       searchResultRefs.current[selectedIndex].scrollIntoView({
@@ -179,7 +171,6 @@ function App() {
     }
   }, [selectedIndex]);
 
-  // Reset Refs when search results change
   useEffect(() => {
     searchResultRefs.current = searchResultRefs.current.slice(
       0,
@@ -340,6 +331,20 @@ function App() {
       });
   }, [students, attendance, now, calculateDuration, overtimeLimit, passPrefix]);
 
+  const filteredOnBreakStudents = React.useMemo(() => {
+    if (!onBreakSearchTerm) return sortedStudentsOnBreak;
+    const lowerTerm = onBreakSearchTerm.toLowerCase();
+    return sortedStudentsOnBreak.filter(({ student, record }) => {
+      return (
+        (student.name && student.name.toLowerCase().includes(lowerTerm)) ||
+        (record.passNumber &&
+          record.passNumber.toLowerCase().includes(lowerTerm)) ||
+        (student.idNumber &&
+          String(student.idNumber).toLowerCase().includes(lowerTerm))
+      );
+    });
+  }, [sortedStudentsOnBreak, onBreakSearchTerm]);
+
   const recentActiveBreaks = React.useMemo(() => {
     const sortedByTime = [...sortedStudentsOnBreak].sort((a, b) => {
       return new Date(b.record.checkOutTime) - new Date(a.record.checkOutTime);
@@ -428,11 +433,18 @@ function App() {
         statusColor = "text-yellow-600";
       } else if (completedBreaks.length > 0) {
         statusText = currentT.statusCompleted;
-        statusColor = "text-emerald-600"; // Green for completed
+        statusColor = "text-emerald-600";
       }
       return { ...student, statusText, passNumber, statusColor };
     });
   }, [searchTerm, students, attendance, t, isSearchFocused]);
+
+  useEffect(() => {
+    searchResultRefs.current = searchResultRefs.current.slice(
+      0,
+      searchResults.length
+    );
+  }, [searchResults]);
 
   // --- Handlers ---
 
@@ -531,7 +543,6 @@ function App() {
           setIsSearchFocused(true); // រក្សា Focus
           setSelectedIndex(-1);
 
-          // Focus Back Input
           setTimeout(() => {
             if (searchInputRef.current) searchInputRef.current.focus();
           }, 50);
@@ -576,7 +587,6 @@ function App() {
 
       try {
         await update(docRef, { checkInTime: new Date().toISOString() });
-        // Restore Focus
         setTimeout(() => {
           setSearchTerm("");
           setSelectedStudentId("");
@@ -590,9 +600,6 @@ function App() {
     [dbWrite, students, speak, ref, update]
   );
 
-  // --- Helpers ---
-
-  // Function ជ្រើសរើសសិស្ស + Auto Focus Logic
   const handleSelectStudentFromList = React.useCallback(
     (student) => {
       const studentBreaks = attendance[student.id] || [];
@@ -615,7 +622,6 @@ function App() {
     [attendance, handleCheckOut]
   );
 
-  // Keyboard Navigation
   const handleSearchKeyDown = React.useCallback(
     (e) => {
       if (searchResults.length === 0) return;
@@ -1219,7 +1225,9 @@ function App() {
                       <div className="p-2 bg-emerald-500/20 rounded-lg">
                         <IconClock className="text-emerald-300" />
                       </div>
-                      <h3 className="text-xl font-bold text-white">
+
+                      {/* 🔥 [HIDDEN ON MOBILE] Header Text 🔥 */}
+                      <h3 className="text-xl font-bold text-white hidden lg:block">
                         សកម្មភាពថ្មីៗ (៦ នាក់ចុងក្រោយ)
                       </h3>
                     </div>
@@ -1227,9 +1235,17 @@ function App() {
                     <div className="space-y-4">
                       {recentActiveBreaks.length > 0 ? (
                         recentActiveBreaks.map(
-                          ({ student, record, elapsedMins, isOvertime }) => (
-                            /* 🔥 NEON CARD UI (Green Theme) 🔥 */
-                            <div key={record.id} className="neon-running-card">
+                          (
+                            { student, record, elapsedMins, isOvertime },
+                            index
+                          ) => (
+                            /* 🔥 [HIDDEN ON MOBILE > 2] NEON CARD UI 🔥 */
+                            <div
+                              key={record.id}
+                              className={`neon-running-card ${
+                                index >= 2 ? "hidden lg:block" : ""
+                              }`}
+                            >
                               <div
                                 className="neon-inner-content"
                                 style={{ background: "#022c22" }}
@@ -1326,7 +1342,8 @@ function App() {
                       }`}
                     >
                       <div className="bg-emerald-900/30 backdrop-blur-md border border-emerald-500/30 rounded-3xl p-6 shadow-2xl">
-                        <h2 className="text-2xl font-bold text-white mb-4 text-center lg:text-left">
+                        {/* 🔥 [HIDDEN ON MOBILE] Search Header Text 🔥 */}
+                        <h2 className="text-2xl font-bold text-white mb-4 text-center lg:text-left hidden lg:block">
                           {t.searchPlaceholder.split("/")[0]}
                         </h2>
 
@@ -1456,12 +1473,28 @@ function App() {
               </div>
             )}
 
-            {/* --- PAGE 2: កំពុងសម្រាក (GRID) --- */}
+            {/* --- PAGE 2: កំពុងសម្រាក (GRID + 🔥SEARCH ADDED) --- */}
             {!loading && currentPage === "onBreak" && (
               <div key="on-break-page" className="pb-10">
-                {sortedStudentsOnBreak.length > 0 ? (
+                {/* 🔥🔥 [NEW] ON BREAK SEARCH BOX 🔥🔥 */}
+                <div className="mb-6">
+                  <div className="relative max-w-md mx-auto md:mx-0">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <IconSearch className="h-5 w-5 text-emerald-400" />
+                    </div>
+                    <input
+                      type="text"
+                      className="block w-full pl-10 pr-3 py-2 border border-emerald-500/30 rounded-xl leading-5 bg-emerald-900/20 text-emerald-100 placeholder-emerald-500/50 focus:outline-none focus:bg-emerald-900/40 focus:ring-1 focus:ring-emerald-500 sm:text-sm transition-colors"
+                      placeholder="ស្វែងរកឈ្មោះ / លេខកាត..."
+                      value={onBreakSearchTerm}
+                      onChange={(e) => setOnBreakSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {filteredOnBreakStudents.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ...">
-                    {sortedStudentsOnBreak.map(
+                    {filteredOnBreakStudents.map(
                       ({ student, record, elapsedMins, isOvertime }) => (
                         <div
                           key={record.id}
@@ -1490,12 +1523,15 @@ function App() {
                       <IconClock className="w-16 h-16 text-white/50" />
                     </div>
                     <p className="text-white text-2xl font-semibold opacity-70">
-                      {t.noStudentsOnBreak}
+                      {onBreakSearchTerm
+                        ? "រកមិនឃើញសិស្សក្នុងបញ្ជី"
+                        : t.noStudentsOnBreak}
                     </p>
                   </div>
                 )}
               </div>
             )}
+
             {/* --- PAGE 3: បានចូល (GRID) --- */}
             {!loading && currentPage === "completed" && (
               <div
